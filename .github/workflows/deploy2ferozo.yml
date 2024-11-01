@@ -1,0 +1,41 @@
+name: Deploy to Ferozo
+
+on:
+  push:
+    branches:
+      - main  # Use the branch you want to trigger the action
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install PHP and Composer
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.0'
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install
+
+      - name: Update DB credentials in api.php
+        run: |
+          sed -i "s/'username' => 'php-crud-api'/'username' => '${{ secrets.DB_USERNAME }}'/g" api.php
+          sed -i "s/'password' => 'php-crud-api'/'password' => '${{ secrets.DB_PASSWORD }}'/g" api.php
+          sed -i "s/'database' => 'php-crud-api'/'database' => '${{ secrets.DB_NAME }}'/g" api.php
+
+      - name: Install FTP client
+        run: sudo apt-get install -y lftp
+
+      - name: Upload files via FTP
+        env:
+          FTP_SERVER: ${{ secrets.FEROZO_USER }}.ferozo.com
+          FTP_USERNAME: ${{ secrets.FEROZO_USER }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          PROJECT_NAME: ${{ secrets.PROJECT_NAME }}
+        run: |
+          lftp -u "$FTP_USERNAME","$FTP_PASSWORD" -e \
+            "mirror -R --delete --verbose --parallel=10 --exclude-glob .git/ ./ ftp://$FTP_SERVER/public_html/${PROJECT_NAME}; bye"
