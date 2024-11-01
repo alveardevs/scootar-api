@@ -1,9 +1,9 @@
-name: Deploy to Ferozo
+name: 🚀 Deploy to Ferozo
 
 on:
   push:
     branches:
-      - main  # Use the branch you want to trigger the action
+      - main  # Trigger deployment on pushes to the main branch
 
 jobs:
   deploy:
@@ -12,30 +12,33 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Install PHP and Composer
+      - name: Set up PHP and Composer
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.0'
+          php-version: '8.3'
           coverage: none
 
-      - name: Install Composer dependencies
+      - name: Install dependencies
         run: composer install
 
-      - name: Update DB credentials in api.php
+      - name: Update DB credentials in src/index.php
         run: |
-          sed -i "s/'username' => 'php-crud-api'/'username' => '${{ secrets.DB_USERNAME }}'/g" api.php
-          sed -i "s/'password' => 'php-crud-api'/'password' => '${{ secrets.DB_PASSWORD }}'/g" api.php
-          sed -i "s/'database' => 'php-crud-api'/'database' => '${{ secrets.DB_NAME }}'/g" api.php
+          sed -i "s/'username' => 'php-crud-api'/'username' => '${{ secrets.DB_USERNAME }}'/g" src/index.php
+          sed -i "s/'password' => 'php-crud-api'/'password' => '${{ secrets.DB_PASSWORD }}'/g" src/index.php
+          sed -i "s/'database' => 'php-crud-api'/'database' => '${{ secrets.DB_NAME }}'/g" src/index.php
 
       - name: Install FTP client
         run: sudo apt-get install -y lftp
 
-      - name: Upload files via FTP
+      - name: Upload selected files via FTP
         env:
           FTP_SERVER: ${{ secrets.FEROZO_USER }}.ferozo.com
           FTP_USERNAME: ${{ secrets.FEROZO_USER }}
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
           PROJECT_NAME: ${{ secrets.PROJECT_NAME }}
         run: |
-          lftp -u "$FTP_USERNAME","$FTP_PASSWORD" -e \
-            "mirror -R --delete --verbose --parallel=10 --exclude-glob .git/ ./ ftp://$FTP_SERVER/public_html/${PROJECT_NAME}; bye"
+          lftp -u "$FTP_USERNAME","$FTP_PASSWORD" -e "
+            mirror -R --delete --verbose --parallel=10 src /public_html/${PROJECT_NAME}/src;
+            mirror -R --delete --verbose --parallel=10 vendor /public_html/${PROJECT_NAME}/vendor;
+            put src/index.php -o /public_html/${PROJECT_NAME}/index.php;
+            bye" ftp://$FTP_SERVER
