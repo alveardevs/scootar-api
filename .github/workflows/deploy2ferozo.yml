@@ -36,4 +36,4 @@ jobs:
           FTP_USERNAME: ${{ secrets.FEROZO_USER }}
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
           PROJECT_NAME: ${{ secrets.PROJECT_NAME }}
-          run: lftp -u "$FTP_USERNAME","$FTP_PASSWORD" -e "mirror -R --delete --verbose --parallel=20 --exclude-glob .git/ src /public_html/${PROJECT_NAME}/src; mirror -R --delete --verbose --parallel=20 vendor /public_html/${PROJECT_NAME}/vendor; put src/index.php -o /public_html/${PROJECT_NAME}/index.php; bye" ftp://$FTP_SERVER || true
+        run: lftp -u "$FTP_USERNAME","$FTP_PASSWORD" -e "mirror -R --delete --verbose --parallel=20 --exclude-glob .git/ src /public_html/${PROJECT_NAME}/src; mirror -R --delete --verbose --parallel=20 vendor /public_html/${PROJECT_NAME}/vendor; put src/index.php -o /public_html/${PROJECT_NAME}/index.php; bye" ftp://$FTP_SERVER || true
